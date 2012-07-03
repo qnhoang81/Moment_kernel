@@ -42,7 +42,8 @@ extern void sec_log_buf_init(void);
 #define RESERVED_PMEM_PREVIEW	(2 * 1024 * 1024)
 #define RESERVED_PMEM_RENDER  	(2 * 1024 * 1024)
 #define RESERVED_PMEM_STREAM	(4 * 1024 * 1024) // 0 -> 4
-#define RESERVED_G3D			(32 * 1024 * 1024) 	/* G3D is shared with uppper memory areas */
+#define RESERVED_G3D			(32 * 1024 * 1024)
+#define RESERVED_PMEM_GPU1		(RESERVED_G3D) 	/* G3D is shared with uppper memory areas */
 #define RESERVED_PMEM			(8 * 1024 * 1024)
 
 #define RESERVED_G3D_UI			(4 * 1024 * 1024)
@@ -57,8 +58,9 @@ extern void sec_log_buf_init(void);
 #define PREVIEW_RESERVED_PMEM_START	(JPEG_RESERVED_PMEM_START - RESERVED_PMEM_PREVIEW)
 #define RENDER_RESERVED_PMEM_START	(PREVIEW_RESERVED_PMEM_START - RESERVED_PMEM_RENDER)
 #define STREAM_RESERVED_PMEM_START	(RENDER_RESERVED_PMEM_START - RESERVED_PMEM_STREAM)
-#define G3D_RESERVED_START			(RESERVED_PMEM_END_ADDR - RESERVED_G3D)		 /* G3D is shared */
-#define RESERVED_PMEM_START			(G3D_RESERVED_START - RESERVED_PMEM)
+#define G3D_RESERVED_START      	(RESERVED_PMEM_END_ADDR - RESERVED_G3D)
+#define GPU1_RESERVED_PMEM_START	(G3D_RESERVED_START)	 /* G3D is shared */
+#define RESERVED_PMEM_START		(G3D_RESERVED_START - RESERVED_PMEM)
 #define PHYS_UNRESERVED_SIZE		(RESERVED_PMEM_START - PHYS_OFFSET)
 
 #else
@@ -69,6 +71,8 @@ extern void sec_log_buf_init(void);
 struct s3c6410_pmem_setting{
         resource_size_t pmem_start;
         resource_size_t pmem_size;
+	resource_size_t pmem_gpu1_start;
+	resource_size_t pmem_gpu1_size;
         resource_size_t pmem_render_start;
         resource_size_t pmem_render_size;
         resource_size_t pmem_render_pic_start;

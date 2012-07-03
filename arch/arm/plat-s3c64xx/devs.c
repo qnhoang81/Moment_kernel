@@ -595,7 +595,13 @@ static struct android_pmem_platform_data pmem_pdata = {
 	.cached		= 1,
 	.buffered	= 1,	//09.12.01 hoony: surfaceflinger optimize
 };
- 
+
+static struct android_pmem_platform_data pmem_gpu1_pdata = {
+	.name 		= "pmem_gpu1",
+	.cached 	= 1,
+	.buffered 	= 1,
+};
+
 static struct android_pmem_platform_data pmem_render_pdata = {
 	.name		= "pmem_render",
 	.no_allocator	= 1,
@@ -637,41 +643,58 @@ static struct platform_device pmem_device = {
 	.id		= 0,
 	.dev		= { .platform_data = &pmem_pdata },
 };
+
+static struct platform_device pmem_gpu1_device = {
+	.name		= "android_pmem",
+	.id 		= 1,
+	.dev		= { .platform_data = &pmem_gpu1_pdata },
+};
  
 static struct platform_device pmem_render_device = {
 	.name		= "android_pmem",
-	.id		= 1,
+	.id		= 2,
 	.dev		= { .platform_data = &pmem_render_pdata },
 };
 
 static struct platform_device pmem_stream_device = {
 	.name		= "android_pmem",
-	.id		= 2,
+	.id		= 3,
 	.dev		= { .platform_data = &pmem_stream_pdata },
 };
 
 static struct platform_device pmem_stream2_device = {
 	.name		= "android_pmem",
-	.id		= 3,
+	.id		= 4,
 	.dev		= { .platform_data = &pmem_stream2_pdata },
 };
 
 static struct platform_device pmem_preview_device = {
 	.name		= "android_pmem",
-	.id		= 4,
+	.id		= 5,
 	.dev		= { .platform_data = &pmem_preview_pdata },
 };
 
 static struct platform_device pmem_picture_device = {
 	.name		= "android_pmem",
-	.id		= 5,
+	.id		= 6,
 	.dev		= { .platform_data = &pmem_picture_pdata },
 };
 
 static struct platform_device pmem_jpeg_device = {
 	.name		= "android_pmem",
-	.id		= 6,
+	.id		= 7,
 	.dev		= { .platform_data = &pmem_jpeg_pdata },
+};
+
+static struct platform_device *pmem_devices[]= {
+	&pmem_device,
+	&pmem_gpu1_device,
+	&pmem_render_device,
+	&pmem_stream_device,
+	&pmem_stream2_device,
+	&pmem_preview_device,
+	&pmem_picture_device,
+	&pmem_jpeg_device,
 };
 
 void __init s3c6410_add_mem_devices(struct s3c6410_pmem_setting *setting)
@@ -680,6 +703,12 @@ void __init s3c6410_add_mem_devices(struct s3c6410_pmem_setting *setting)
 		pmem_pdata.start = setting->pmem_start;
 		pmem_pdata.size = setting->pmem_size;
 		platform_device_register(&pmem_device);
+	}
+
+	if (setting->pmem_gpu1_size) {
+		pmem_gpu1_pdata.start = setting->pmem_gpu1_start;
+		pmem_gpu1_pdata.size = setting->pmem_gpu1_size;
+		platform_device_register(&pmem_gpu1_device);
 	}
 
 	if (setting->pmem_render_size) {

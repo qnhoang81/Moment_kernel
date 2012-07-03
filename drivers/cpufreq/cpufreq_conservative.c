@@ -32,7 +32,7 @@
 #define DEF_FREQUENCY_UP_THRESHOLD		(70)
 #define DEF_FREQUENCY_DOWN_THRESHOLD		(40)
 #ifdef CONFIG_CPU_S3C6410
-#define DEF_MAX_FREQ_TIME_HZ			(15*HZ)
+#define DEF_MAX_FREQ_TIME_HZ			(0*HZ)
 #define DEF_SAMPLING_FREQ_STEP	20
 extern int dvfs_change_quick;
 static int dvfs_max_freq_cnt = 0;

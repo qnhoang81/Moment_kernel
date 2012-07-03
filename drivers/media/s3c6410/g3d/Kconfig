@@ -1,13 +1,15 @@
 #
-## G2D subsystem configuration
-##
+# G3D subsystem configuration
 #
-##menu "G2D Support"
+
+menu "G3D Support"
 
 config VIDEO_G3D
-    bool	"Samsung FIMG-3D Driver"
-    depends on CPU_S3C6410
-    default n
+	tristate "OpenFIMG FIMG-3DSE Driver"
+#	bool "Samsung FIMG-3DSE Driver"
+	default n
 	help
-	    FIMG-3D
-#endmenu
+		FIMG-3D
+
+endmenu
+
