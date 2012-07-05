@@ -345,7 +345,7 @@ EXPORT_SYMBOL_GPL(kvm_set_cr0);
 
 void kvm_lmsw(struct kvm_vcpu *vcpu, unsigned long msw)
 {
-	kvm_set_cr0(vcpu, (vcpu->arch.cr0 & ~0x0eul) | (msw & 0x0f));
+	kvm_set_cr0(vcpu, (vcpu->arch.cr0 & ~0x0ful) | (msw & 0x0f));
 }
 EXPORT_SYMBOL_GPL(kvm_lmsw);
 
@@ -483,42 +483,48 @@ static u32 emulated_msrs[] = {
 	MSR_IA32_MISC_ENABLE,
 };
 
-static int set_efer(struct kvm_vcpu *vcpu, u64 efer)
+static void set_efer(struct kvm_vcpu *vcpu, u64 efer)
 {
-	if (efer & efer_reserved_bits)
-		return 1;
+	if (efer & efer_reserved_bits) {
+		kvm_inject_gp(vcpu, 0);
+		return;
+	}
 
 	if (is_paging(vcpu)
-	    && (vcpu->arch.shadow_efer & EFER_LME) != (efer & EFER_LME))
-		return 1;
+	    && (vcpu->arch.shadow_efer & EFER_LME) != (efer & EFER_LME)) {
+		kvm_inject_gp(vcpu, 0);
+		return;
+	}
 
 	if (efer & EFER_FFXSR) {
 		struct kvm_cpuid_entry2 *feat;
 
 		feat = kvm_find_cpuid_entry(vcpu, 0x80000001, 0);
-		if (!feat || !(feat->edx & bit(X86_FEATURE_FXSR_OPT)))
-			return 1;
+		if (!feat || !(feat->edx & bit(X86_FEATURE_FXSR_OPT))) {
+			kvm_inject_gp(vcpu, 0);
+			return;
+		}
 	}
 
 	if (efer & EFER_SVME) {
 		struct kvm_cpuid_entry2 *feat;
 
 		feat = kvm_find_cpuid_entry(vcpu, 0x80000001, 0);
-		if (!feat || !(feat->ecx & bit(X86_FEATURE_SVM)))
-			return 1;
+		if (!feat || !(feat->ecx & bit(X86_FEATURE_SVM))) {
+			kvm_inject_gp(vcpu, 0);
+			return;
+		}
 	}
+
+	kvm_x86_ops->set_efer(vcpu, efer);
 
 	efer &= ~EFER_LMA;
 	efer |= vcpu->arch.shadow_efer & EFER_LMA;
-
-	kvm_x86_ops->set_efer(vcpu, efer);
 
 	vcpu->arch.shadow_efer = efer;
 
 	vcpu->arch.mmu.base_role.nxe = (efer & EFER_NX) && !tdp_enabled;
 	kvm_mmu_reset_context(vcpu);
-
-	return 0;
 }
 
 void kvm_enable_efer_bits(u64 mask)
@@ -548,22 +554,14 @@ static int do_set_msr(struct kvm_vcpu *vcpu, unsigned index, u64 *data)
 
 static void kvm_write_wall_clock(struct kvm *kvm, gpa_t wall_clock)
 {
-	int version;
-	int r;
+	static int version;
 	struct pvclock_wall_clock wc;
 	struct timespec boot;
 
 	if (!wall_clock)
 		return;
 
-	r = kvm_read_guest(kvm, wall_clock, &version, sizeof(version));
-	if (r)
-		return;
-
-	if (version & 1)
-		++version;  /* first time write, random junk */
-
-	++version;
+	version++;
 
 	kvm_write_guest(kvm, wall_clock, &version, sizeof(version));
 
@@ -821,7 +819,8 @@ int kvm_set_msr_common(struct kvm_vcpu *vcpu, u32 msr, u64 data)
 {
 	switch (msr) {
 	case MSR_EFER:
-		return set_efer(vcpu, data);
+		set_efer(vcpu, data);
+		break;
 	case MSR_K7_HWCR:
 		data &= ~(u64)0x40;	/* ignore flush filter disable */
 		if (data != 0) {
@@ -1413,7 +1412,6 @@ static int kvm_vcpu_ioctl_get_cpuid2(struct kvm_vcpu *vcpu,
 {
 	int r;
 
-	vcpu_load(vcpu);
 	r = -E2BIG;
 	if (cpuid->nent < vcpu->arch.cpuid_nent)
 		goto out;
@@ -1425,7 +1423,6 @@ static int kvm_vcpu_ioctl_get_cpuid2(struct kvm_vcpu *vcpu,
 
 out:
 	cpuid->nent = vcpu->arch.cpuid_nent;
-	vcpu_put(vcpu);
 	return r;
 }
 
@@ -1675,7 +1672,6 @@ static int kvm_vcpu_ioctl_x86_setup_mce(struct kvm_vcpu *vcpu,
 	int r;
 	unsigned bank_num = mcg_cap & 0xff, bank;
 
-	vcpu_load(vcpu);
 	r = -EINVAL;
 	if (!bank_num || bank_num >= KVM_MAX_MCE_BANKS)
 		goto out;
@@ -1690,7 +1686,6 @@ static int kvm_vcpu_ioctl_x86_setup_mce(struct kvm_vcpu *vcpu,
 	for (bank = 0; bank < bank_num; bank++)
 		vcpu->arch.mce_banks[bank*4] = ~(u64)0;
 out:
-	vcpu_put(vcpu);
 	return r;
 }
 
@@ -1893,9 +1888,7 @@ long kvm_arch_vcpu_ioctl(struct file *filp,
 		r = -EFAULT;
 		if (copy_from_user(&mce, argp, sizeof mce))
 			goto out;
-		vcpu_load(vcpu);
 		r = kvm_vcpu_ioctl_x86_set_mce(vcpu, &mce);
-		vcpu_put(vcpu);
 		break;
 	}
 	default:
@@ -4160,6 +4153,18 @@ static u16 get_segment_selector(struct kvm_vcpu *vcpu, int seg)
 
 	kvm_get_segment(vcpu, &kvm_seg, seg);
 	return kvm_seg.selector;
+}
+
+static int load_segment_descriptor_to_kvm_desct(struct kvm_vcpu *vcpu,
+						u16 selector,
+						struct kvm_segment *kvm_seg)
+{
+	struct desc_struct seg_desc;
+
+	if (load_guest_segment_descriptor(vcpu, selector, &seg_desc))
+		return 1;
+	seg_desct_to_kvm_desct(&seg_desc, selector, kvm_seg);
+	return 0;
 }
 
 static int kvm_load_realmode_segment(struct kvm_vcpu *vcpu, u16 selector, int seg)

@@ -2832,13 +2832,8 @@ static void rtl_rar_set(struct rtl8169_private *tp, u8 *addr)
 	spin_lock_irq(&tp->lock);
 
 	RTL_W8(Cfg9346, Cfg9346_Unlock);
-
-	RTL_W32(MAC4, high);
-	RTL_R32(MAC4);
-
 	RTL_W32(MAC0, low);
-	RTL_R32(MAC0);
-
+	RTL_W32(MAC4, high);
 	RTL_W8(Cfg9346, Cfg9346_Lock);
 
 	spin_unlock_irq(&tp->lock);
@@ -4321,7 +4316,7 @@ static netdev_tx_t rtl8169_start_xmit(struct sk_buff *skb,
 
 	tp->cur_tx += frags + 1;
 
-	wmb();
+	smp_wmb();
 
 	RTL_W8(TxPoll, NPQ);	/* set polling bit */
 
@@ -4681,7 +4676,7 @@ static int rtl8169_poll(struct napi_struct *napi, int budget)
 		 * until it does.
 		 */
 		tp->intr_mask = 0xffff;
-		wmb();
+		smp_wmb();
 		RTL_W16(IntrMask, tp->intr_event);
 	}
 
@@ -4819,8 +4814,8 @@ static void rtl_set_rx_mode(struct net_device *dev)
 		mc_filter[1] = swab32(data);
 	}
 
-	RTL_W32(MAR0 + 4, mc_filter[1]);
 	RTL_W32(MAR0 + 0, mc_filter[0]);
+	RTL_W32(MAR0 + 4, mc_filter[1]);
 
 	RTL_W32(RxConfig, tmp);
 

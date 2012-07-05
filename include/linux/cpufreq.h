@@ -329,15 +329,6 @@ extern struct cpufreq_governor cpufreq_gov_performance;
 #endif
 #ifdef CONFIG_CPU_FREQ_DEFAULT_GOV_PERFORMANCE
 #define CPUFREQ_DEFAULT_GOVERNOR	(&cpufreq_gov_performance)
-#elif defined(CONFIG_CPU_FREQ_DEFAULT_GOV_SMARTASS)
-extern struct cpufreq_governor cpufreq_gov_smartass;
-#define CPUFREQ_DEFAULT_GOVERNOR        (&cpufreq_gov_smartass)
-#elif defined(CONFIG_CPU_FREQ_DEFAULT_GOV_SMOOTHASS)
-extern struct cpufreq_governor cpufreq_gov_smoothass;
-#define CPUFREQ_DEFAULT_GOVERNOR        (&cpufreq_gov_smoothass)
-#elif defined(CONFIG_CPU_FREQ_DEFAULT_GOV_LAGFREE)
-extern struct cpufreq_governor cpufreq_gov_lagfree;
-#define CPUFREQ_DEFAULT_GOVERNOR        (&cpufreq_gov_lagfree)
 #elif defined(CONFIG_CPU_FREQ_DEFAULT_GOV_POWERSAVE)
 extern struct cpufreq_governor cpufreq_gov_powersave;
 #define CPUFREQ_DEFAULT_GOVERNOR	(&cpufreq_gov_powersave)
@@ -350,9 +341,6 @@ extern struct cpufreq_governor cpufreq_gov_ondemand;
 #elif defined(CONFIG_CPU_FREQ_DEFAULT_GOV_CONSERVATIVE)
 extern struct cpufreq_governor cpufreq_gov_conservative;
 #define CPUFREQ_DEFAULT_GOVERNOR	(&cpufreq_gov_conservative)
-#elif defined(CONFIG_CPU_FREQ_DEFAULT_GOV_MINMAX)
-extern struct cpufreq_governor cpufreq_gov_minmax;
-#define CPUFREQ_DEFAULT_GOVERNOR  (&cpufreq_gov_minmax)
 #endif
 
 

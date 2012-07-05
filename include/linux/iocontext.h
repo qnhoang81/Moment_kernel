@@ -1,7 +1,6 @@
 #ifndef IOCONTEXT_H
 #define IOCONTEXT_H
 
-#include <linux/bitmap.h>
 #include <linux/radix-tree.h>
 #include <linux/rcupdate.h>
 
@@ -61,16 +60,6 @@ struct cfq_io_context {
 };
 
 /*
- * Indexes into the ioprio_changed bitmap.  A bit set indicates that
- * the corresponding I/O scheduler needs to see a ioprio update.
- */
-enum {
-	IOC_CFQ_IOPRIO_CHANGED,
-	IOC_BFQ_IOPRIO_CHANGED,
-	IOC_IOPRIO_CHANGED_BITS
-};
-
-/*
  * I/O subsystem state of the associated processes.  It is refcounted
  * and kmalloc'ed. These could be shared between processes.
  */
@@ -93,8 +82,6 @@ struct io_context {
 	struct as_io_context *aic;
 	struct radix_tree_root radix_root;
 	struct hlist_head cic_list;
-	struct radix_tree_root bfq_radix_root;
-	struct hlist_head bfq_cic_list;
 	void *ioc_data;
 };
 

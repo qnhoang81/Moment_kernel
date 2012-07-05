@@ -338,10 +338,6 @@ amd_check_l3_disable(int index, struct _cpuid4_info_regs *this_leaf)
 	     (boot_cpu_data.x86_mask  < 0x1)))
 		return;
 
-	/* not in virtualized environments */
-	if (num_k8_northbridges == 0)
-		return;
-
 	this_leaf->can_disable = true;
 	this_leaf->l3_indices  = amd_calc_l3_indices();
 }
@@ -651,19 +647,18 @@ static void __cpuinit cache_shared_cpu_map_setup(unsigned int cpu, int index)
 {
 	struct _cpuid4_info	*this_leaf, *sibling_leaf;
 	unsigned long num_threads_sharing;
-	int index_msb, i, sibling;
+	int index_msb, i;
 	struct cpuinfo_x86 *c = &cpu_data(cpu);
 
 	if ((index == 3) && (c->x86_vendor == X86_VENDOR_AMD)) {
-		for_each_cpu(i, c->llc_shared_map) {
+		struct cpuinfo_x86 *d;
+		for_each_online_cpu(i) {
 			if (!per_cpu(cpuid4_info, i))
 				continue;
+			d = &cpu_data(i);
 			this_leaf = CPUID4_INFO_IDX(i, index);
-			for_each_cpu(sibling, c->llc_shared_map) {
-				if (!cpu_online(sibling))
-					continue;
-				set_bit(sibling, this_leaf->shared_cpu_map);
-			}
+			cpumask_copy(to_cpumask(this_leaf->shared_cpu_map),
+				     d->llc_shared_map);
 		}
 		return;
 	}

@@ -690,6 +690,8 @@ static int s3c_rtc_probe(struct platform_device *pdev)
  	pr_debug("s3c_rtc: RTCCON=%02x\n",
 		 readb(s3c_rtc_base + S3C_RTCCON));
 
+	s3c_rtc_setfreq(&pdev->dev, 1);
+
 	device_init_wakeup(&pdev->dev, 1);
 
 	/* register RTC and exit */
@@ -736,8 +738,6 @@ static int s3c_rtc_probe(struct platform_device *pdev)
 #endif
 
 	platform_set_drvdata(pdev, rtc);
-
-	s3c_rtc_setfreq(&pdev->dev, 1);
 
 #ifdef CONFIG_RTC_SYNC
 	rtc_sync_start_save_delta();
